@@ -522,7 +522,7 @@
             outPuts(2) = out_stress
             outPuts(3) = out_mises
          ELSE
-            nDOP = (/11,2,0,0/)
+            nDOP = (/12,2,0,0/)
             outPuts(1)  = out_displacement
             outPuts(2)  = out_mises
             outPuts(3)  = out_stress
@@ -534,6 +534,7 @@
             outPuts(9)  = out_integ
             outPuts(10) = out_jacobian
             outPuts(11) = out_defGrad
+            outPuts(12) = out_Cauchy
          END IF
 
          CALL READLS(lSolver_CG, lEq, list)
@@ -1362,6 +1363,11 @@
             lEq%output(iOut)%o    = 0
             lEq%output(iOut)%l    = nstd
             lEq%output(iOut)%name = "Stress"
+         CASE (out_stress)
+            lEq%output(iOut)%grp  = outGrp_Cauchy
+            lEq%output(iOut)%o    = 0
+            lEq%output(iOut)%l    = nstd
+            lEq%output(iOut)%name = "Cauchy"
          CASE (out_fibDir)
             lEq%output(iOut)%grp  = outGrp_fN
             lEq%output(iOut)%o    = 0

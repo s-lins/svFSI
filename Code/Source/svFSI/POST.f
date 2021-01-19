@@ -391,7 +391,7 @@
             IF (lM%eType .EQ. eType_NRB) CALL NRBNNX(lM, Ec)
 
 !     Finding the norm for all the nodes of this element, including
-!     those that don't belong to this face, which will be inerpolated
+!     those that don't belong to this face, which will be interpolated
 !     from the nodes of the face
             nV = 0._RKIND
             DO a=1, eNoN
@@ -515,7 +515,8 @@
      2   nFn
       REAL(KIND=RKIND) w, Jac, detF, Je, ya, Ja, elM, nu, lambda, mu,
      2   trS, vmises, ed(nstd), ksix(nsd,nsd), F(nsd,nsd), S(nsd,nsd),
-     3   P(nsd,nsd), sigma(nsd,nsd), CC(nsd,nsd,nsd,nsd)
+     3   P(nsd,nsd), sigma(nsd,nsd), CC(nsd,nsd,nsd,nsd),
+     4   cauchy(nsd, nsd)
 
       REAL(KIND=RKIND), ALLOCATABLE :: xl(:,:), dl(:,:), fN(:,:),
      2   pSl(:), Nx(:,:), N(:), sA(:), sF(:,:), sE(:)
@@ -625,7 +626,7 @@
                END DO
                sE(e) = sE(e) + w*detF
 
-            CASE (outGrp_stress, outGrp_Mises)
+            CASE (outGrp_stress, outGrp_Mises, outGrp_Cauchy)
 !           2nd Piola-Kirchhoff (S) and material stiffness (CC) tensors
                sigma = 0._RKIND
                IF (cPhys .EQ. phys_lElas) THEN
@@ -682,6 +683,52 @@
                      sA(Ac)   = sA(Ac)   + w*N(a)
                      sF(:,Ac) = sF(:,Ac) + w*N(a)*pSl(:)
                   END DO
+               IF (outGrp .EQ. outGrp_Cauchy) THEN
+                  IF (nsd .EQ. 3) THEN
+                     pSl(1) = (F(1,1)*sigma(1,1)*F(1,1) 
+    2                           + F(1,2)*sigma(2,1)*F(1,2)
+    3                           + F(1,3)*sigma(3,1)*F(1,3))/Ja
+                     pSl(2) = (F(1,1)*sigma(1,2)*F(2,1)
+    2                            + F(1,2)*sigma(2,2)*F(2,2)
+    3                            + F(1,3)*sigma(3,2)*F(2,3))/Ja
+                     pSl(3) = (F(1,1)*sigma(1,3)*F(3,1) 
+    2                            + F(1,2)*sigma(2,3)*F(3,2)
+    3                            + F(1,3)*sigma(3,3) *F(3,3))/Ja
+
+                     pSl(4) = (F(2,1)*sigma(1,1)*F(1,1)
+    2                            + F(2,2)*sigma(2,1)*F(1,2)
+    3                            + F(2,3)*sigma(3,1)*F(1,3))/Ja
+                     pSl(5) = (F(2,1)*sigma(1,2)*F(2,1)
+    2                            + F(2,2)*sigma(2,2)*F(2,2)
+    3                            + F(2,3)*sigma(3,2)*F(2,3))/Ja
+                     pSl(6) = (F(2,1)*sigma(1,3)*F(3,1)
+    2                            + F(2,2)*sigma(2,3)*F(3,2)
+    2                            + F(2,3)*sigma(3,3)*F(3,3)/Ja
+
+                     pSl(7) =( F(3,1)*sigma(1,1)*F(1,1)
+    2                            + F(3,2)*sigma(2,1)*F(1,2)
+    3                            + F(3,3)*sigma(3,1)*F(1,3))/Ja
+                     pSl(8) = (F(3,1)*sigma(1,2)*F(2,1)
+    2                            + F(3,2)*sigma(2,2)*F(2,2)
+    3                            + F(3,3)*sigma(3,2)*F(2,3))/Ja
+                     pSl(9) = (F(3,1)*sigma(1,3)*F(3,1)
+    2                            + F(3,2)*sigma(2,3)*F(3,2)
+    3                            + F(3,3)*sigma(3,3)*F(3,3))/Ja
+                  ELSE
+                     pSl(1) = (F(1,1)*sigma(1,1)*F(1,1)
+    2                            + F(1,2)*sigma(2,1)*F(1,2))/Ja
+                     pSl(2) = (F(1,1)*sigma(1,2) *F(2,1)
+    2                            + F(1,2)*sigma(2,1)*F(2,2))/Ja
+                     pSl(3) = (F(2,1)*sigma(1,1)*F(1,1) 
+    2                            + F(2,2)*sigma(2,1)*F(1,2))/Ja
+                     pSl(4) = (F(2,1)*sigma(1,2)*F(2,1) 
+    2                            + F(2,2)*sigma(2,2)*F(2,2)/Ja
+                  END IF
+
+                  DO a=1, eNoN
+                     Ac       = lM%IEN(a,e)
+                     sA(Ac)   = sA(Ac)   + w*N(a)
+                     sF(:,Ac) = sF(:,Ac) + w*N(a)*pSl(:)
                ELSE
 !              Von Mises stress
                   trS = MAT_TRACE(sigma, nsd) / REAL(nsd,KIND=RKIND)

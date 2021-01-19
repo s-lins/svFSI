@@ -573,6 +573,27 @@
                   END DO
                   DEALLOCATE(tmpV)
                   ALLOCATE(tmpV(maxnsd,msh(iM)%nNo))
+               CASE (outGrp_Cauchy)
+                  IF (ALLOCATED(tmpV)) DEALLOCATE(tmpV)
+                  ALLOCATE(tmpV(nstd,msh(iM)%nNo))
+                  tmpV = 0._RKIND
+                  IF (pstEq) THEN
+                     DO a=1, msh(iM)%nNo
+                        Ac = msh(iM)%gN(a)
+                        tmpV(:,a) = pS0(:,Ac)
+                     END DO
+                  END IF
+                  IF (.NOT.cmmInit) THEN
+                     ALLOCATE(tmpVe(msh(iM)%nEl))
+                     tmpVe = 0._RKIND
+                     CALL TPOST(msh(iM), l, tmpV, tmpVe, lD, iEq, oGrp)
+                     DEALLOCATE(tmpVe)
+                  END IF
+                  DO a=1, msh(iM)%nNo
+                     d(iM)%x(is:ie,a) = tmpV(:,a)
+                  END DO
+                  DEALLOCATE(tmpV)
+                  ALLOCATE(tmpV(maxnsd,msh(iM)%nNo))
                CASE (outGrp_vort, outGrp_eFlx, outGrp_hFlx,
      2            outGrp_stInv, outGrp_vortex, outGrp_Visc)
                   CALL POST(msh(iM), tmpV, lY, lD, oGrp, iEq)
